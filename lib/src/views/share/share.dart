@@ -10,7 +10,6 @@ import 'package:provider/provider.dart';
 
 import '../../../iconfont/icon_font.dart';
 import '../../apis/share_apis.dart';
-import '../../apis/upload.dart';
 import '../../models/fileListModels/provider.dart';
 import '../../utils/http_request.dart';
 import '../../utils/tools.dart';

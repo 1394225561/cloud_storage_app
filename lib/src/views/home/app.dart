@@ -5,6 +5,7 @@ import '../../../iconfont/icon_font.dart';
 import '../../models/fileListModels/provider.dart';
 
 import '../../models/transferListModels/provider.dart';
+import '../../utils/global_constant.dart';
 import '../../utils/tools.dart';
 import '/src/views/personal/personal.dart';
 import '/src/views/share/share.dart';
@@ -20,6 +21,8 @@ class AppHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    GlobalConstant.platform = Theme.of(context).platform;
+
     return Container(
       padding: const EdgeInsets.all(0),
       child: const MainPart(),

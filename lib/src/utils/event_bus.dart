@@ -7,6 +7,11 @@ class AddUploadingListData {
   Map<String, dynamic> data;
 }
 
+class AddDownloadingListData {
+  AddDownloadingListData(this.data);
+  Map<String, dynamic> data;
+}
+
 class RefreshFileList {
   RefreshFileList(this.type);
   int type;

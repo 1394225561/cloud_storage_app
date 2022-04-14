@@ -4,8 +4,11 @@ import 'package:cloud_storage_app/iconfont/icon_font.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../apis/download_apis.dart';
 import '../../models/fileListModels/provider.dart';
+import '../../utils/event_bus.dart';
 import '../../utils/file_icon.dart';
+import '../../utils/http_request.dart';
 import '../../utils/operations_static.dart';
 import '../../utils/tools.dart';
 import '/src/routers/router_table.dart';
@@ -585,6 +588,9 @@ class _MyListTableState extends State<MyListTable> {
       case 'showMore':
         _showMore(files[0]);
         break;
+      case 'download':
+        _download(files);
+        break;
       default:
         print(event);
         break;
@@ -635,6 +641,63 @@ class _MyListTableState extends State<MyListTable> {
         );
       },
     ).then((val) {});
+  }
+
+  void _download(List files) {
+    Map<String, dynamic> firstFile = files[0];
+    List fileIds = [];
+    String creationTime = DateTime.now().millisecondsSinceEpoch.toString();
+    String guid = Tools.generateRandomStrings(10) + creationTime;
+
+    bool isSingle;
+    String fileId;
+    String shareId;
+    String name;
+    String url;
+    if (widget.type == 'otherShare') {
+      isSingle = firstFile['isDir'] == 0 && firstFile['fileNum'] <= 1;
+      fileIds.add(firstFile['fileId']);
+      fileId = fileIds.join(',');
+      shareId = firstFile['id'];
+      name = isSingle ? firstFile['fileName'] : '批量下载.zip';
+      url = RequestConfig.baseUrl +
+          DownloadApis.assignedShareDownload['path'] +
+          '?shareId=' +
+          shareId +
+          '&fileId=' +
+          fileId;
+    } else {
+      isSingle = files.length == 1 && firstFile['isDir'] == 0;
+      for (var element in files) {
+        fileIds.add(element['id']);
+      }
+      fileId = fileIds.join(',');
+      shareId = '';
+      name = isSingle ? firstFile['fileName'] : '批量下载.zip';
+      if (isSingle) {
+        url = DownloadApis.unifileD['path'] + '?fileId=' + fileId;
+      } else {
+        url = DownloadApis.multifilesD['path'] + '?fileIds=' + fileId;
+      }
+    }
+
+    Map<String, dynamic> file = {
+      'url': url,
+      'downloadType': widget.type,
+      'isSingle': isSingle,
+      'fileId': fileId,
+      'shareId': shareId,
+      'name': name,
+      'guid': guid,
+      'creationTime': creationTime,
+      'state': 'waiting',
+      'stateText': '等待下载',
+      'count': 0,
+      'total': 0,
+      'chunk': null,
+      'chunks': null,
+    };
+    eventBus.fire(AddDownloadingListData(file));
   }
 }
 

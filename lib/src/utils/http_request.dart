@@ -233,9 +233,13 @@ class RequestClient {
   /// 文件上传
   /// [url] - 上传的地址
   /// [filePath] - 本地文件路径
+  /// [fileStream] - Stream<List<int>> Stream方式读取的文件数据
+  /// [length] - 流的长度 dio以Stream方式创建MultipartFile时的必须参数
   /// [progressCallback] - 上传进度变化时的回调，用来实现进度条
-  /// [data] - 上传参数 如下
+  /// [data] - 上传列表文件Map结构 如下
   /// Map<String, dynamic> [data] = {
+  ///   'file': 文件实例 用于分片读取文件,
+  ///   'pickerType': 获取文件的方式,
   ///   'name': 文件名,
   ///   'chunk': 当前分片,
   ///   'chunks': 总分片数,
@@ -248,6 +252,7 @@ class RequestClient {
   ///   'md5': 文件md5码,
   ///   'fileCategory': 文件上传目录类别 1个人文件 2共享文件 4同步文件,
   ///   'filePath': 文件的设备路径,
+  ///   'creationTime': 文件加入队列的时间戳,
   ///   'state': 上传状态code,
   ///     waiting加入队列（等待上传）
   ///     uploading上传中（百分比）
@@ -260,6 +265,8 @@ class RequestClient {
   Future dioUpload(
     String url, {
     required String filePath,
+    required Stream<List<int>> fileStream,
+    required int length,
     required String filename,
     required String? mimeType,
     required Map<String, dynamic> data,
@@ -268,23 +275,64 @@ class RequestClient {
     bool Function(ApiException)? onError,
   }) async {
     try {
-      Map<String, dynamic> requestData = Map.of(data);
+      Map<String, dynamic> requestData = Map.of({
+        'name': data['name'],
+        'chunk': data['chunk'],
+        'chunks': data['chunks'] > 1 ? data['chunks'] : null,
+        'type': data['type'],
+        'size': data['size'],
+        'dirId': data['dirId'],
+        'guid': data['guid'],
+        'uploadType': data['uploadType'],
+        'chunkSize': data['chunkSize'],
+        'md5': data['md5'],
+        'fileCategory': data['fileCategory'],
+      });
       List<String>? mimeTypeList = mimeType?.split('/');
-      // TODO:分片 Stream<Uint8List>
-      requestData['file'] = await MultipartFile.fromFile(
-        filePath,
+      requestData['file'] = MultipartFile(
+        fileStream,
+        length,
         filename: filename,
         contentType: mimeTypeList != null
             ? MediaType(mimeTypeList[0], mimeTypeList[1])
             : null,
       );
-      FormData formData = FormData.fromMap(requestData); //form data上传文件
+      FormData formData = FormData.fromMap(requestData);
       CancelToken cancelToken = CancelToken();
       Response resp = await _dio.post(
         url,
         data: formData,
         options: Options(headers: headers),
         onSendProgress: (int count, int total) {
+          progressCallback(count, total, data, cancelToken);
+        },
+      );
+
+      return _handleResponse(resp);
+    } catch (e) {
+      var exception = ApiException.from(e);
+      if (onError?.call(exception) != true) {
+        throw exception;
+      }
+    }
+
+    return null;
+  }
+
+  Future dioDownload(
+    String url,
+    String saveUrl, {
+    required Map<String, dynamic> data,
+    required Function progressCallback,
+    Map<String, String> headers = const {},
+    bool Function(ApiException)? onError,
+  }) async {
+    try {
+      CancelToken cancelToken = CancelToken();
+      Response resp = await _dio.download(
+        url,
+        saveUrl,
+        onReceiveProgress: (int count, int total) {
           progressCallback(count, total, data, cancelToken);
         },
       );

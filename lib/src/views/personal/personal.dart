@@ -10,9 +10,9 @@ import 'package:provider/provider.dart';
 
 import '../../../iconfont/icon_font.dart';
 import '../../apis/personal_apis.dart';
-import '../../apis/upload.dart';
 import '../../models/fileListModels/provider.dart';
 import '../../utils/event_bus.dart';
+import '../../utils/global_constant.dart';
 import '../../utils/http_request.dart';
 import '../../utils/tools.dart';
 import '/src/components/myTopBar/my_top_bar.dart';
@@ -370,30 +370,32 @@ class _PersonalPageState extends State<PersonalPage> {
 
   void uploadTypeSelect(String type) async {
     if (type == '文件') {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        withReadStream: true,
-      );
+      FilePickerResult? result = await FilePicker.platform.pickFiles();
       if (result != null) {
         PlatformFile file = result.files.first;
-        print(type);
-        print(file);
-        print(file.readStream);
-        print(Tools.getMimeType(file.extension));
 
         String creationTime = DateTime.now().millisecondsSinceEpoch.toString();
         String guid = Tools.generateRandomStrings(10) + creationTime;
         String filePath = file.path ?? '';
+        File generatorFile = File(filePath);
         String? mimeType = Tools.getMimeType(file.extension);
+
+        int size = file.size;
+        int chunkSize = GlobalConstant.chunkSize;
+        int chunks = (size / chunkSize).ceil();
+
         Map<String, dynamic> data = {
+          'file': generatorFile,
+          'pickerType': 'filePicker',
           'name': file.name,
-          'chunk': '',
-          'chunks': '',
+          'chunk': 0,
+          'chunks': chunks,
           'type': mimeType,
-          'size': file.size,
+          'size': size,
           'dirId': tableparm['fileId'],
           'guid': guid,
           'uploadType': '',
-          'chunkSize': '',
+          'chunkSize': chunkSize,
           'md5': '',
           'fileCategory': 1,
           'filePath': filePath,
@@ -424,32 +426,29 @@ class _PersonalPageState extends State<PersonalPage> {
       if (resource != null) {
         mediaFiles?.add(resource);
       }
-      print('mediaFiles');
-      print(mediaFiles);
-      print(type);
 
       mediaFiles?.forEach((file) async {
         if (file != null) {
-          print(file.path);
-          print(file.mimeType);
-          print(file.name);
-          print(await file.length());
-          print(await file.readAsBytes());
-
           String creationTime =
               DateTime.now().millisecondsSinceEpoch.toString();
           String guid = Tools.generateRandomStrings(10) + creationTime;
-          // DateTime lastModified = await file.lastModified();
+
+          int size = await file.length();
+          int chunkSize = GlobalConstant.chunkSize;
+          int chunks = (size / chunkSize).ceil();
+
           Map<String, dynamic> data = {
+            'file': file,
+            'pickerType': 'imagePicker',
             'name': file.name,
-            'chunk': '',
-            'chunks': '',
+            'chunk': 0,
+            'chunks': chunks,
             'type': file.mimeType,
-            'size': await file.length(),
+            'size': size,
             'dirId': tableparm['fileId'],
             'guid': guid,
             'uploadType': '',
-            'chunkSize': '',
+            'chunkSize': chunkSize,
             'md5': '',
             'fileCategory': 1,
             'filePath': file.path,

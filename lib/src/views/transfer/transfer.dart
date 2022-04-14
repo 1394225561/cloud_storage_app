@@ -1,24 +1,14 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:dio/dio.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../iconfont/icon_font.dart';
-import '../../apis/personal_apis.dart';
-import '../../apis/upload.dart';
-import '../../models/fileListModels/provider.dart';
 import '../../models/transferListModels/provider.dart';
 import '../../utils/event_bus.dart';
 import '../../utils/file_icon.dart';
-import '../../utils/http_request.dart';
 import '../../utils/tools.dart';
 import '/src/components/myTopBar/my_top_bar.dart';
-import '/src/components/listTable/list_table.dart';
 
 class TransferPage extends StatefulWidget {
   final String bizType = "transfer";
@@ -42,6 +32,8 @@ class _TransferPageState extends State<TransferPage>
   late TabController _tabController;
   late StreamSubscription<AddUploadingListData>
       _addUploadingListDataSubscription;
+  late StreamSubscription<AddDownloadingListData>
+      _addDownloadingListDataSubscription;
 
   static const List<Tab> _transferTabList = <Tab>[
     Tab(text: '上传列表'),
@@ -70,6 +62,11 @@ class _TransferPageState extends State<TransferPage>
       Provider.of<TransferListProvider>(context, listen: false)
           .addUploadingListData(event.data);
     });
+    _addDownloadingListDataSubscription =
+        eventBus.on<AddDownloadingListData>().listen((event) {
+      Provider.of<TransferListProvider>(context, listen: false)
+          .addDownloadingListData(event.data);
+    });
   }
 
   // 3. 注销状态
@@ -77,6 +74,7 @@ class _TransferPageState extends State<TransferPage>
   void dispose() {
     _tabController.dispose();
     _addUploadingListDataSubscription.cancel();
+    _addDownloadingListDataSubscription.cancel();
     super.dispose();
   }
 
@@ -240,8 +238,9 @@ class _TransferPageState extends State<TransferPage>
     return Consumer<TransferListProvider>(builder: (context, provider, child) {
       List uploadingListData = provider.state.uploadingListData;
       int uploadingListLength = provider.state.uploadingListData.length;
-      List completedListData = provider.state.completedListData;
-      int completedListLength = provider.state.completedListData.length;
+      List uploadCompletedListData = provider.state.uploadCompletedListData;
+      int uploadCompletedListLength =
+          provider.state.uploadCompletedListData.length;
 
       return Container(
           padding: const EdgeInsets.all(0),
@@ -298,18 +297,8 @@ class _TransferPageState extends State<TransferPage>
                                       ),
                                     ),
                                     _fileState(currentItem),
-                                    GestureDetector(
-                                      child: Container(
-                                        // height: 40,
-                                        width: 10,
-                                        // color: Colors.red,
-                                      ),
-                                      onTap: () {
-                                        // Provider.of<TransferListProvider>(
-                                        //         context,
-                                        //         listen: false)
-                                        //     .completeFileUpload(currentItem);
-                                      },
+                                    const SizedBox(
+                                      width: 10,
                                     ),
                                     _fileUploadHandler(currentItem),
                                   ],
@@ -331,7 +320,7 @@ class _TransferPageState extends State<TransferPage>
               SliverPadding(
                 padding: const EdgeInsets.only(top: 10, bottom: 10, left: 10),
                 sliver: SliverToBoxAdapter(
-                  child: Text('完成上传 ( $completedListLength )',
+                  child: Text('完成上传 ( $uploadCompletedListLength )',
                       style: TextStyle(
                         color: Colors.grey[700],
                       )),
@@ -341,7 +330,8 @@ class _TransferPageState extends State<TransferPage>
                 // 上传完成 列表
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    Map<String, dynamic> currentItem = completedListData[index];
+                    Map<String, dynamic> currentItem =
+                        uploadCompletedListData[index];
                     print('currentItem 完成上传');
                     print(currentItem);
                     return Column(
@@ -400,7 +390,7 @@ class _TransferPageState extends State<TransferPage>
                     );
                   },
                   //设置显示个数
-                  childCount: completedListLength,
+                  childCount: uploadCompletedListLength,
                 ),
               )
             ],
@@ -408,11 +398,204 @@ class _TransferPageState extends State<TransferPage>
     });
   }
 
-  Widget _tabDownload() {
+  Widget _downloadProgressWrapper(Map<String, dynamic> file) {
+    String count = Tools.transformSize(file['count']);
+    String total = Tools.transformSize(file['total']);
     return Container(
-      padding: const EdgeInsets.all(0),
-      color: Colors.black,
+      margin: EdgeInsets.fromLTRB(widget.marginSize, 0, 0, 0),
+      height: widget.itemHeight - widget.titleHeight,
+      child: Row(
+        children: [
+          Text(
+            file['total'] == -1 ? '$count / --' : '$count / $total',
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 12.0,
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  Widget _fileDownloadHandler(Map<String, dynamic> file) {
+    bool isDownloading = file['state'] == 'downloading' ? true : false;
+    IconNames icon = file['state'] == 'downloading'
+        ? IconNames.pause_circle_o
+        : IconNames.play_circle_o;
+    return IconButton(
+      onPressed: () {
+        setState(() {
+          if (isDownloading) {
+            file['state'] = 'pausing';
+            file['stateText'] = '暂停';
+          } else {
+            file['state'] = 'downloading';
+            file['stateText'] = '下载中';
+          }
+          isDownloading = !isDownloading;
+        });
+      },
+      icon: IconFont(
+        icon,
+        color: '#616161',
+      ),
+      iconSize: 16,
+    );
+  }
+
+  Widget _tabDownload() {
+    return Consumer<TransferListProvider>(builder: (context, provider, child) {
+      List downloadingListData = provider.state.downloadingListData;
+      int downloadingListLength = provider.state.downloadingListData.length;
+      List downloadCompletedListData = provider.state.downloadCompletedListData;
+      int downloadCompletedListLength =
+          provider.state.downloadCompletedListData.length;
+
+      return Container(
+          padding: const EdgeInsets.all(0),
+          child: CustomScrollView(
+            slivers: <Widget>[
+              SliverPadding(
+                padding: const EdgeInsets.only(top: 10, bottom: 10, left: 10),
+                sliver: SliverToBoxAdapter(
+                  child: Text('正在下载 ( $downloadingListLength )',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                      )),
+                ),
+              ),
+              SliverList(
+                // 正在下载 列表
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    Map<String, dynamic> currentItem =
+                        downloadingListData[index];
+                    print('currentItem 正在下载');
+                    print(currentItem);
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              top: 5, bottom: 5, left: 5, right: 10),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding:
+                                    EdgeInsets.only(left: widget.marginSize),
+                                child: SizedBox(
+                                  // height: checkboxHeight,
+                                  // width: widget.checkboxWidth,
+                                  child: Center(
+                                    child: _fileIconWrapper(currentItem),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          _titleWrapper(currentItem['name']),
+                                          _downloadProgressWrapper(currentItem),
+                                        ],
+                                      ),
+                                    ),
+                                    _fileDownloadHandler(currentItem),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(
+                          height: 5,
+                        ),
+                      ],
+                    );
+                  },
+                  //设置显示个数
+                  childCount: downloadingListLength,
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.only(top: 10, bottom: 10, left: 10),
+                sliver: SliverToBoxAdapter(
+                  child: Text('完成下载 ( $downloadCompletedListLength )',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                      )),
+                ),
+              ),
+              SliverList(
+                // 下载完成 列表
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    Map<String, dynamic> currentItem =
+                        downloadCompletedListData[index];
+                    print('currentItem 完成下载');
+                    print(currentItem);
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              top: 5, bottom: 5, left: 5, right: 10),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding:
+                                    EdgeInsets.only(left: widget.marginSize),
+                                child: SizedBox(
+                                  // height: checkboxHeight,
+                                  // width: widget.checkboxWidth,
+                                  child: Center(
+                                    child: _fileIconWrapper(currentItem),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          _titleWrapper(currentItem['name']),
+                                          _timestampWrapper(
+                                              currentItem['creationTime']),
+                                        ],
+                                      ),
+                                    ),
+                                    _fileSizeWrapper(currentItem['total'] == -1
+                                        ? currentItem['count']
+                                        : currentItem['total']),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(
+                          height: 5,
+                        ),
+                      ],
+                    );
+                  },
+                  //设置显示个数
+                  childCount: downloadCompletedListLength,
+                ),
+              )
+            ],
+          ));
+    });
   }
 
   Widget _tabHandler() {
