@@ -1,5 +1,3 @@
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'operations_static.dart';
 import '/src/utils/tools.dart';
 

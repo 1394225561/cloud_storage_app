@@ -23,11 +23,14 @@ class TransferListProvider extends ChangeNotifier {
     downloadCompletedListData: [],
   );
 
+  // 上传相关
+  // 添加文件到上传中列表
   void addUploadingListData(Map<String, dynamic> data) {
     state.uploadingListData.add(data);
     readFile(data);
   }
 
+  // 分片读取文件
   void readFile(Map<String, dynamic> data) {
     String pickerType = data['pickerType'];
     int start = data['chunk'] * data['chunkSize'];
@@ -47,6 +50,7 @@ class TransferListProvider extends ChangeNotifier {
     startUpload(data, chunkedStream, currentLength);
   }
 
+  // 发起上传请求
   void startUpload(
     Map<String, dynamic> file,
     Stream<List<int>> chunkedStream,
@@ -67,7 +71,7 @@ class TransferListProvider extends ChangeNotifier {
         filename: file['name'],
         mimeType: file['type'],
         data: file,
-        progressCallback: progressCallback,
+        progressCallback: uploadProgressCallback,
       );
       print('fileUploadResponse');
       print(fileUploadResponse);
@@ -80,7 +84,8 @@ class TransferListProvider extends ChangeNotifier {
     }, isShowLoading: false);
   }
 
-  void progressCallback(int count, int total, Map<String, dynamic> file,
+  // 上传进度回调
+  void uploadProgressCallback(int count, int total, Map<String, dynamic> file,
       CancelToken cancelToken) {
     int counts = file['chunk'] * file['chunkSize'] + count;
     int totals = file['size'];
@@ -94,6 +99,7 @@ class TransferListProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // 完成上传 文件移动到完成列表
   void completeFileUpload(Map<String, dynamic> data) {
     int currentFileIndex = state.uploadingListData.indexWhere((item) {
       return item['guid'] == data['guid'];
@@ -108,15 +114,19 @@ class TransferListProvider extends ChangeNotifier {
     }
   }
 
+  // 刷新文件列表
   void refreshFileList(int type) {
     eventBus.fire(RefreshFileList(type));
   }
 
+  // 下载相关
+  // 添加文件到下载中列表
   void addDownloadingListData(Map<String, dynamic> data) {
     state.downloadingListData.add(data);
     startDownload(data);
   }
 
+  // 开始下载
   void startDownload(
     Map<String, dynamic> file,
   ) async {
@@ -135,9 +145,6 @@ class TransferListProvider extends ChangeNotifier {
       print('saveUrl');
       print(saveUrl);
 
-      ///参数一 文件的网络储存URL
-      ///参数二 下载的本地目录文件
-      ///参数三 下载进度监听
       requestUnified(() async {
         var fileDownloadResponse = await requestClient.dioDownload(
           file['url'],
@@ -157,6 +164,7 @@ class TransferListProvider extends ChangeNotifier {
     }
   }
 
+  // 下载进度回调
   void downloadProgressCallback(int count, int total, Map<String, dynamic> file,
       CancelToken cancelToken) {
     if (total != -1) {
@@ -172,6 +180,7 @@ class TransferListProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // 文件下载完成 移动文件到完成列表
   void completeFileDownload(Map<String, dynamic> data) {
     int currentFileIndex = state.downloadingListData.indexWhere((item) {
       return item['guid'] == data['guid'];

@@ -1,7 +1,5 @@
 import 'dart:math';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../apis/app.dart';
 import '/src/utils/http_request.dart';
 import 'mime_types.dart';

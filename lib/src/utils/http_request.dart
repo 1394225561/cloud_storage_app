@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 
-// import 'package:dio/browser_imp.dart';
-// import 'package:dio/adapter_browser.dart';
 import 'package:dio/dio.dart';
 
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
@@ -11,7 +9,6 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '/src/utils/navigator_global_key.dart';
 import '../routers/router_table.dart';
@@ -236,7 +233,7 @@ class RequestClient {
   /// [fileStream] - Stream<List<int>> Stream方式读取的文件数据
   /// [length] - 流的长度 dio以Stream方式创建MultipartFile时的必须参数
   /// [progressCallback] - 上传进度变化时的回调，用来实现进度条
-  /// [data] - 上传列表文件Map结构 如下
+  /// [data] - 上传列表 文件Map结构 如下
   /// Map<String, dynamic> [data] = {
   ///   'file': 文件实例 用于分片读取文件,
   ///   'pickerType': 获取文件的方式,
@@ -261,6 +258,8 @@ class RequestClient {
   ///     判断handleStatus处理状态
   ///       0完成 1审核中 2待同步内网 （新增文本用 3涉密 4涉敏）
   ///   'stateText': 上传状态文描,
+  ///   'cancelToken': CancelToken实例 用于暂停,
+  ///   'isLastChunk': 标识 用于判断当前请求是否为最后一片,
   /// };
   Future dioUpload(
     String url, {
@@ -299,10 +298,12 @@ class RequestClient {
       );
       FormData formData = FormData.fromMap(requestData);
       CancelToken cancelToken = CancelToken();
+      data['cancelToken'] = cancelToken;
       Response resp = await _dio.post(
         url,
         data: formData,
         options: Options(headers: headers),
+        cancelToken: cancelToken,
         onSendProgress: (int count, int total) {
           progressCallback(count, total, data, cancelToken);
         },
@@ -319,6 +320,32 @@ class RequestClient {
     return null;
   }
 
+  /// 文件下载
+  /// [url] - 下载文件的链接地址
+  /// [saveUrl] - 保存文件的本地地址
+  /// [progressCallback] - 下载进度变化时的回调，用来实现进度条
+  /// [data] - 下载列表 文件Map结构 如下
+  ///  Map<String, dynamic> [data] = {
+  ///    'url': 下载文件的链接地址,
+  ///    'downloadType': 下载文件的所属目录类别,
+  ///    'isSingle': 是否为单文件下载,
+  ///    'fileId': 下载文件的id字符串集,
+  ///    'shareId': 他人分享的id,
+  ///    'name': 文件名,
+  ///    'guid': 唯一标识,
+  ///    'creationTime': 文件加入队列的时间戳,
+  ///    'state': 下载状态code,
+  ///       waiting加入队列（等待下载）
+  ///       downloading下载中（进度）
+  ///       pausing暂停状态（暂停）
+  ///       completed上传完成（100%）
+  ///    'stateText': 下载状态文描,
+  ///    'count': 已接收的文件字节数,
+  ///    'total': 文件的总字节数（批量下载时为-1 未知）,
+  ///    'chunk': null,
+  ///    'chunks': null,
+  ///    'cancelToken': CancelToken实例 用于暂停,
+  ///  };
   Future dioDownload(
     String url,
     String saveUrl, {
@@ -329,9 +356,11 @@ class RequestClient {
   }) async {
     try {
       CancelToken cancelToken = CancelToken();
+      data['cancelToken'] = cancelToken;
       Response resp = await _dio.download(
         url,
         saveUrl,
+        cancelToken: cancelToken,
         onReceiveProgress: (int count, int total) {
           progressCallback(count, total, data, cancelToken);
         },

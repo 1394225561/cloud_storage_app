@@ -8,11 +8,8 @@ import '../../apis/download_apis.dart';
 import '../../models/fileListModels/provider.dart';
 import '../../utils/event_bus.dart';
 import '../../utils/file_icon.dart';
-import '../../utils/http_request.dart';
 import '../../utils/operations_static.dart';
 import '../../utils/tools.dart';
-import '/src/routers/router_table.dart';
-import '/src/utils/show_snack_bar.dart';
 import '/src/utils/operations_auth.dart';
 
 class MyListTable extends StatefulWidget {
@@ -660,8 +657,7 @@ class _MyListTableState extends State<MyListTable> {
       fileId = fileIds.join(',');
       shareId = firstFile['id'];
       name = isSingle ? firstFile['fileName'] : '批量下载.zip';
-      url = RequestConfig.baseUrl +
-          DownloadApis.assignedShareDownload['path'] +
+      url = DownloadApis.assignedShareDownload['path'] +
           '?shareId=' +
           shareId +
           '&fileId=' +

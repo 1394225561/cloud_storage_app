@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -217,11 +218,17 @@ class _TransferPageState extends State<TransferPage>
       onPressed: () {
         setState(() {
           if (isUploading) {
-            file['state'] = 'pausing';
-            file['stateText'] = '暂停';
+            if (file['cancelToken'] != null) {
+              CancelToken cancelToken = file['cancelToken'];
+              cancelToken.cancel();
+              file['state'] = 'pausing';
+              file['stateText'] = '暂停';
+            }
           } else {
             file['state'] = 'uploading';
             file['stateText'] = '上传中';
+            Provider.of<TransferListProvider>(context, listen: false)
+                .readFile(file);
           }
           isUploading = !isUploading;
         });
@@ -234,6 +241,7 @@ class _TransferPageState extends State<TransferPage>
     );
   }
 
+  // 上传列表
   Widget _tabUpload() {
     return Consumer<TransferListProvider>(builder: (context, provider, child) {
       List uploadingListData = provider.state.uploadingListData;
@@ -398,6 +406,7 @@ class _TransferPageState extends State<TransferPage>
     });
   }
 
+  // 下载进度
   Widget _downloadProgressWrapper(Map<String, dynamic> file) {
     String count = Tools.transformSize(file['count']);
     String total = Tools.transformSize(file['total']);
@@ -418,6 +427,7 @@ class _TransferPageState extends State<TransferPage>
     );
   }
 
+  // 文件下载 暂定/继续
   Widget _fileDownloadHandler(Map<String, dynamic> file) {
     bool isDownloading = file['state'] == 'downloading' ? true : false;
     IconNames icon = file['state'] == 'downloading'
@@ -427,11 +437,18 @@ class _TransferPageState extends State<TransferPage>
       onPressed: () {
         setState(() {
           if (isDownloading) {
-            file['state'] = 'pausing';
-            file['stateText'] = '暂停';
+            if (file['cancelToken'] != null) {
+              CancelToken cancelToken = file['cancelToken'];
+              cancelToken.cancel();
+              file['state'] = 'pausing';
+              file['stateText'] = '暂停';
+            }
           } else {
+            // TODO:未实现断点续传
             file['state'] = 'downloading';
             file['stateText'] = '下载中';
+            Provider.of<TransferListProvider>(context, listen: false)
+                .startDownload(file);
           }
           isDownloading = !isDownloading;
         });
@@ -444,6 +461,7 @@ class _TransferPageState extends State<TransferPage>
     );
   }
 
+  // 下载列表
   Widget _tabDownload() {
     return Consumer<TransferListProvider>(builder: (context, provider, child) {
       List downloadingListData = provider.state.downloadingListData;
@@ -598,6 +616,7 @@ class _TransferPageState extends State<TransferPage>
     });
   }
 
+  // 涉敏文件列表
   Widget _tabHandler() {
     return Container(
       padding: const EdgeInsets.all(0),
