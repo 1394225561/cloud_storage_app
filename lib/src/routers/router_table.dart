@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:fluro/fluro.dart';
 
 import '../views/login/tenant_list.dart';
+import '../views/preview/preview.dart';
 import '/src/views/test/dynamic_detail.dart';
 
 import '/configuration.dart';
@@ -106,6 +107,13 @@ class RouterManager {
     return DynamicDetail(routeParams: params);
   });
 
+  static String previewPath = '/preview';
+  static String previewDetailPath = '$previewPath/:id/:type';
+  static Handler previewDetailHandler = Handler(
+      handlerFunc: (BuildContext? context, Map<String, dynamic> params) {
+    return Preview(routeParams: params);
+  });
+
   static void initRouter() {
     if (router == null) {
       router = PermissionRouter();
@@ -138,6 +146,11 @@ class RouterManager {
       handler: dynamicDetailHandler,
       transitionType: TransitionType.inFromRight,
     );
+    router?.define(
+      previewDetailPath,
+      handler: previewDetailHandler,
+      transitionType: TransitionType.inFromRight,
+    );
   }
 
   static void initWhiteList() {
@@ -149,6 +162,8 @@ class RouterManager {
       loginPath,
       tenantListPath,
       homePath,
+      previewPath,
+      previewDetailPath,
     ];
   }
 }

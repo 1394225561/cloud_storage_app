@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../apis/download_apis.dart';
 import '../../models/fileListModels/provider.dart';
+import '../../routers/router_table.dart';
 import '../../utils/event_bus.dart';
 import '../../utils/file_icon.dart';
 import '../../utils/operations_static.dart';
@@ -717,7 +718,7 @@ class MyClickableListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () async {
+      onTap: () {
         if (file['isDir'] == 1) {
           Map<String, dynamic> breadCrumbsItem = {
             'name': file['fileName'],
@@ -728,22 +729,11 @@ class MyClickableListTile extends StatelessWidget {
           };
           breadCrumbsHandler('add', breadCrumbsItem);
         } else {
-          print('预览');
+          RouterManager.router?.navigateTo(
+            context,
+            '${RouterManager.previewPath}/${file['id']}/$type',
+          );
         }
-        // Map<String, dynamic> routeParams = {'id': index};
-
-        // Map<String, dynamic> arguments = await RouterManager.router?.navigateTo(
-        //   context,
-        //   '${RouterManager.dynamicPath}/${routeParams['id']}?event=a&event=b',
-        // );
-        // // Object? arguments = await Navigator.of(context)
-        // //     .pushNamed(RouterTable.dynamicDetailPath, arguments: routeParams);
-        // print('MyClickableListTile arguments :>>');
-        // print(arguments);
-        // ShowSnackBar.showInfo(
-        //   context,
-        //   "从动态详情 ${arguments['id']} 返回",
-        // );
       },
       child: MyListTile(
         title,

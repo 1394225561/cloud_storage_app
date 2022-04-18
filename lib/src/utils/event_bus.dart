@@ -16,3 +16,13 @@ class RefreshFileList {
   RefreshFileList(this.type);
   int type;
 }
+
+class BuildPreview {
+  BuildPreview(this.type);
+  String type;
+}
+
+class PreviewCurrentFileList {
+  PreviewCurrentFileList(this.data);
+  List data;
+}

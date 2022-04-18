@@ -13,8 +13,10 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import '/src/utils/navigator_global_key.dart';
 import '../routers/router_table.dart';
 import '/src/serialization/api_response.dart';
+import 'global_constant.dart';
 
 late RequestClient requestClient;
+late PersistCookieJar? cookieJarCache;
 
 class RequestConfig {
   static const connectTimeout = 15000;
@@ -115,7 +117,7 @@ class RequestClient {
     // adapter.withCredentials = true;
     // _dio.httpClientAdapter = adapter;
 
-    // _dio.interceptors.add(myInterceptor(_dio));
+    _dio.interceptors.add(myInterceptor(_dio));
     // 自定义cookie管理
     // _dio.interceptors.add(CookieManager.instance);
   }
@@ -123,8 +125,10 @@ class RequestClient {
   Future initCookieManager() async {
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String appDocPath = appDocDir.path;
-    var cookieJar = PersistCookieJar(storage: FileStorage(appDocPath));
+    PersistCookieJar cookieJar =
+        PersistCookieJar(storage: FileStorage(appDocPath));
     _dio.interceptors.add(CookieManager(cookieJar));
+    cookieJarCache = cookieJar;
     return 'finish';
   }
 
@@ -380,6 +384,10 @@ class RequestClient {
 
 // 拦截器
 InterceptorsWrapper myInterceptor(dio) {
+  String getCookies(List<Cookie> cookies) {
+    return cookies.map((cookie) => '${cookie.name}=${cookie.value}').join('; ');
+  }
+
   return InterceptorsWrapper(
     onRequest: (options, handler) {
       // dio.lock();
@@ -390,6 +398,14 @@ InterceptorsWrapper myInterceptor(dio) {
       // var token = Cache.getToken();
       // options.headers["Authorization"] = "Basic $token";
       // dio.unlock();
+
+      cookieJarCache?.loadForRequest(options.uri).then((cookies) {
+        String cookie = getCookies(cookies);
+        if (cookie.isNotEmpty) {
+          GlobalConstant.cookie = cookie;
+        }
+      });
+
       return handler.next(options);
     },
     onResponse: (response, handler) {
