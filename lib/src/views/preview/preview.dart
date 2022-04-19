@@ -96,7 +96,7 @@ class _PreviewState extends State<Preview> {
         galleryItems: imageList,
         defaultImage: index,
         pageChanged: _pageChanged,
-        decoration: const BoxDecoration(color: Colors.white),
+        decoration: BoxDecoration(color: Colors.grey[50]),
       );
     } else if (fileType == 'file') {
       bodyWidget = PreviewFile(file);

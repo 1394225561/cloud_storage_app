@@ -69,30 +69,39 @@ class _PreviewImageState extends State<PreviewImage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: GestureDetector(
-        onTap: () {
-          // TODO: 直接pop 会报错 Looking up a deactivated widget's ancestor is unsafe.
-          pageOptionsScaleController.scaleState =
-              PhotoViewScaleState.originalSize;
-          RouterManager.router?.pop(context);
-        },
-        child: Stack(
-          children: [
-            imageWidget,
-            Positioned(
-              right: 20,
-              bottom: 20,
-              child: Text(
-                '$tempSelect/${widget.galleryItems.length}',
-                style: TextStyle(
-                  color: Colors.grey[700],
+    return WillPopScope(
+      child: Scaffold(
+        body: GestureDetector(
+          onTap: () {
+            _routerBack();
+          },
+          child: Stack(
+            children: [
+              imageWidget,
+              Positioned(
+                right: 20,
+                bottom: 20,
+                child: Text(
+                  '$tempSelect/${widget.galleryItems.length}',
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                  ),
                 ),
-              ),
-            )
-          ],
+              )
+            ],
+          ),
         ),
       ),
+      onWillPop: () async {
+        _routerBack();
+        return true;
+      },
     );
+  }
+
+  void _routerBack() {
+    // TODO: 直接pop 会报错 Looking up a deactivated widget's ancestor is unsafe.
+    pageOptionsScaleController.scaleState = PhotoViewScaleState.originalSize;
+    RouterManager.router?.pop(context);
   }
 }

@@ -67,6 +67,7 @@ class _SharePageState extends State<SharePage> {
         // print(listData);
         print(listData['content'].length);
 
+        GlobalConstant.files[widget.bizType] = listData['content'];
         // 给provider赋值文件列表数据
         Provider.of<FileListProvider>(context, listen: false)
             .assigningListData(listData);

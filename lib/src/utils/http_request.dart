@@ -117,6 +117,7 @@ class RequestClient {
     // adapter.withCredentials = true;
     // _dio.httpClientAdapter = adapter;
 
+    // TODO: 自定义拦截器 web端调试时 需要注释掉
     _dio.interceptors.add(myInterceptor(_dio));
     // 自定义cookie管理
     // _dio.interceptors.add(CookieManager.instance);
