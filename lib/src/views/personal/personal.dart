@@ -17,7 +17,7 @@ import '/src/components/myTopBar/my_top_bar.dart';
 import '/src/components/listTable/list_table.dart';
 
 class PersonalPage extends StatefulWidget {
-  final String bizType = "personal";
+  final String bizType = GlobalConstant.personal;
   final String title;
   const PersonalPage({
     Key? key,
@@ -33,7 +33,6 @@ class _PersonalPageState extends State<PersonalPage> {
   bool isShowBatchOptionBar = false;
   Map<String, dynamic> listData = {};
   late StreamSubscription<RefreshFileList> _refreshFileListSubscription;
-  late StreamSubscription<BuildPreview> _buildPreviewSubscription;
 
   Map<String, dynamic> tableparm = {
     'fileId': 'rootpath',
@@ -56,17 +55,11 @@ class _PersonalPageState extends State<PersonalPage> {
         _onRefresh();
       }
     });
-    _buildPreviewSubscription = eventBus.on<BuildPreview>().listen((event) {
-      if (event.type == widget.bizType) {
-        eventBus.fire(PreviewCurrentFileList(listData['content']));
-      }
-    });
   }
 
   @override
   void dispose() {
     _refreshFileListSubscription.cancel();
-    _buildPreviewSubscription.cancel();
     super.dispose();
   }
 
@@ -89,6 +82,7 @@ class _PersonalPageState extends State<PersonalPage> {
         // print(listData);
         print(listData['content'].length);
 
+        GlobalConstant.files[widget.bizType] = listData['content'];
         // 给provider赋值文件列表数据
         Provider.of<FileListProvider>(context, listen: false)
             .assigningListData(listData);

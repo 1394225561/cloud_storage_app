@@ -9,13 +9,14 @@ import 'package:provider/provider.dart';
 
 import '../../apis/share_apis.dart';
 import '../../models/fileListModels/provider.dart';
+import '../../utils/global_constant.dart';
 import '../../utils/http_request.dart';
 import '../../utils/tools.dart';
 import '/src/components/myTopBar/my_top_bar.dart';
 import '/src/components/listTable/list_table.dart';
 
 class SharePage extends StatefulWidget {
-  final String bizType = "share";
+  final String bizType = GlobalConstant.share;
   final String title;
   const SharePage({
     Key? key,

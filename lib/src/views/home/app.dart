@@ -70,10 +70,10 @@ class _MainPartState extends State<MainPart> {
     requestUnified(() async {
       Map<String, dynamic> userDetailsResponse =
           await requestClient.post(UserApis.userDetails);
-      Tools.userDetails = userDetailsResponse;
+      GlobalConstant.userDetails = userDetailsResponse;
       Map<String, dynamic> sysConfigResponse =
           await requestClient.get(AppApis.sysConfig);
-      Tools.sysConfig = sysConfigResponse;
+      GlobalConstant.sysConfig = sysConfigResponse;
       await Tools.getPermissionBtns();
     });
   }

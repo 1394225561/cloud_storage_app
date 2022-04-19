@@ -9,6 +9,7 @@ import '../../models/fileListModels/provider.dart';
 import '../../routers/router_table.dart';
 import '../../utils/event_bus.dart';
 import '../../utils/file_icon.dart';
+import '../../utils/global_constant.dart';
 import '../../utils/operations_static.dart';
 import '../../utils/tools.dart';
 import '/src/utils/operations_auth.dart';
@@ -120,14 +121,15 @@ class _MyListTableState extends State<MyListTable> {
                     bool isShowOptionBar =
                         fileList[i]['isShowOptionBar'] ?? false;
 
-                    bool isCanFavorite = widget.type == 'personal' ||
-                        widget.type == 'favorite' ||
-                        OperationsAuth.judgeFileCanFavorite(
-                            widget.type, fileList[i], isRootPath);
+                    bool isCanFavorite =
+                        widget.type == GlobalConstant.personal ||
+                            widget.type == GlobalConstant.favorite ||
+                            OperationsAuth.judgeFileCanFavorite(
+                                widget.type, fileList[i], isRootPath);
                     fileList[i]['isCanFavorite'] = isCanFavorite;
 
-                    bool isCanLock =
-                        fileList[i]['isDir'] == 0 && widget.type == 'personal';
+                    bool isCanLock = fileList[i]['isDir'] == 0 &&
+                        widget.type == GlobalConstant.personal;
                     fileList[i]['isCanLock'] = isCanLock;
 
                     return Column(
@@ -392,8 +394,8 @@ class _MyListTableState extends State<MyListTable> {
 
   // 文件icon
   Widget _fileIconWrapper(Map<String, dynamic> file) {
-    IconNames icon =
-        FileIcon.getFileIcon(file, type: widget.type == 'share' ? 2 : 1);
+    IconNames icon = FileIcon.getFileIcon(file,
+        type: widget.type == GlobalConstant.share ? 2 : 1);
     return SizedBox(
       width: 30,
       height: widget.itemHeight,
@@ -652,7 +654,7 @@ class _MyListTableState extends State<MyListTable> {
     String shareId;
     String name;
     String url;
-    if (widget.type == 'otherShare') {
+    if (widget.type == GlobalConstant.otherShare) {
       isSingle = firstFile['isDir'] == 0 && firstFile['fileNum'] <= 1;
       fileIds.add(firstFile['fileId']);
       fileId = fileIds.join(',');

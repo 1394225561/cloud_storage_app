@@ -1,5 +1,5 @@
+import 'global_constant.dart';
 import 'operations_static.dart';
-import '/src/utils/tools.dart';
 
 class OperationsAuth {
   // 文件是否可以进行收藏或者取消收藏操作
@@ -7,7 +7,7 @@ class OperationsAuth {
 // 共享文件需要判断权限
   static bool judgeFileCanFavorite(
       String bizType, Map<String, dynamic> bizData, bool isRootPath) {
-    if (bizType == 'personal') {
+    if (bizType == GlobalConstant.personal) {
       return true;
     }
 
@@ -58,8 +58,9 @@ class OperationsAuth {
   static List filterOptions(List originalOptions) {
     // SharedPreferences prefs = await SharedPreferences.getInstance();
     // String permissionBtnString = prefs.getString('permissionBtns') ?? '';
-    String permissionBtnString = Tools.permissionBtns;
-    List permissionBtn = permissionBtnString.split(Tools.routerSplitCharacter);
+    String permissionBtnString = GlobalConstant.permissionBtns;
+    List permissionBtn =
+        permissionBtnString.split(GlobalConstant.routerSplitCharacter);
     originalOptions.retainWhere(
         (item) => item['code'] == null || permissionBtn.contains(item['code']));
     return originalOptions;
@@ -97,7 +98,7 @@ class OperationsAuth {
     }
     switch (bizType) {
       // 个人文件
-      case 'personal':
+      case GlobalConstant.personal:
         if (bizData['isDir'] == 1) {
           // return [a, c, b, d, e, g, P, Q, f]
           return [
@@ -139,7 +140,7 @@ class OperationsAuth {
           return concatArray;
         }
       // 交换区
-      case 'publicSpace':
+      case GlobalConstant.publicSpace:
         if (bizData['isDir'] == 1) {
           // if (networkEnv === 'FUJIAN') {
           //   return [b, c, f, P, Q]
@@ -178,7 +179,7 @@ class OperationsAuth {
           }
         }
       // 我的收藏
-      case 'favorite':
+      case GlobalConstant.favorite:
         if (bizData['isLock'] == 1) {
           if (bizData['isOwner'] == 1) {
             return [Operations.unshareable];
@@ -194,7 +195,7 @@ class OperationsAuth {
       // downloadAble 代表可以下载
       // shareAble 代表可以再分享
       // 已经被删除的，什么操作都没有，
-      case 'otherShare':
+      case GlobalConstant.otherShare:
         List ops = [];
         if (isRootPath) {
           ops = [Operations.delete];
@@ -216,20 +217,20 @@ class OperationsAuth {
         }
         return ops;
       // 回收站
-      case 'recycle':
+      case GlobalConstant.recycle:
         return [
           Operations.delete,
           Operations.restore,
         ];
       // 发送同事分享
-      case 'toAssigned':
+      case GlobalConstant.toAssigned:
         return [Operations.shareCancel];
-      case 'linkShare':
+      case GlobalConstant.linkShare:
         return [Operations.copyLink, Operations.shareCancel];
-      case 'publicLinkShare':
+      case GlobalConstant.publicLinkShare:
         return [Operations.copyLink, Operations.shareCancel];
       // 共享文件
-      case 'share':
+      case GlobalConstant.share:
         if (bizData['isLock'] != 1) {
           if (bizData['pid'] == 'rootpath') {
             switch (bizData['permissionType']) {

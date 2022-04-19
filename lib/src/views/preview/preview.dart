@@ -1,9 +1,9 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import '../../utils/event_bus.dart';
+import '../../components/myTopBar/my_top_bar.dart';
+import '../../utils/global_constant.dart';
 import '../../utils/http_request.dart';
 import '../../utils/tools.dart';
 import 'preview_file.dart';
@@ -24,8 +24,6 @@ class _PreviewState extends State<Preview> {
   late String? fileType;
   late List currentFileList;
   late List imageList;
-  late StreamSubscription<PreviewCurrentFileList>
-      _previewCurrentFileListSubscription;
 
   @override
   void initState() {
@@ -37,50 +35,46 @@ class _PreviewState extends State<Preview> {
     currentFileList = [];
     imageList = [];
 
-    eventBus.fire(BuildPreview(pageType));
-    _previewCurrentFileListSubscription =
-        eventBus.on<PreviewCurrentFileList>().listen((event) {
-      currentFileList = event.data;
-      file = _getCurrentFile(currentFileList, id);
-      fileType = Tools.getPreviewType(file['fileName']);
-      if (fileType == 'image') {
-        imageList = currentFileList.where((item) {
-          if (Tools.getPreviewType(item['fileName']) == 'image') {
-            if (pageType != 'otherShare') {
-              item['src'] = RequestConfig.baseUrl +
-                  '/api/file/download/img' +
-                  '?fileId=' +
-                  item['id'] +
-                  '&type=2';
-            } else {
-              Map<String, dynamic> params = {
-                'fileArr': [
-                  {
-                    'assignedShareId': item['id'],
-                    'fileIds': [item['fileId']]
-                  }
-                ],
-                'type': 2
-              };
-              String json = jsonEncode(params);
-              item['src'] = RequestConfig.baseUrl +
-                  '/api/assignedShare/receiveUser/downloadFile' +
-                  '?queryStr=' +
-                  Uri.encodeComponent(json);
-            }
-            return true;
+    currentFileList = GlobalConstant.files[pageType];
+    file = _getCurrentFile(currentFileList, id);
+    fileType = Tools.getPreviewType(file['fileName']);
+
+    if (fileType == 'image') {
+      // 过滤出当前文件列表中所有的图片
+      imageList = currentFileList.where((item) {
+        if (Tools.getPreviewType(item['fileName']) == 'image') {
+          if (pageType != GlobalConstant.otherShare) {
+            item['src'] = RequestConfig.baseUrl +
+                '/api/file/download/img' +
+                '?fileId=' +
+                item['id'] +
+                '&type=2';
           } else {
-            return false;
+            Map<String, dynamic> params = {
+              'fileArr': [
+                {
+                  'assignedShareId': item['id'],
+                  'fileIds': [item['fileId']]
+                }
+              ],
+              'type': 2
+            };
+            String json = jsonEncode(params);
+            item['src'] = RequestConfig.baseUrl +
+                '/api/assignedShare/receiveUser/downloadFile' +
+                '?queryStr=' +
+                Uri.encodeComponent(json);
           }
-        }).toList();
-      }
-      setState(() {});
-    });
+          return true;
+        } else {
+          return false;
+        }
+      }).toList();
+    }
   }
 
   @override
   void dispose() {
-    _previewCurrentFileListSubscription.cancel();
     super.dispose();
   }
 
@@ -93,23 +87,43 @@ class _PreviewState extends State<Preview> {
 
   Widget _getBody() {
     Widget bodyWidget;
-    if (fileType == null) {
-      bodyWidget = const SizedBox();
+    if (fileType == 'image') {
+      int index = imageList.indexWhere((item) {
+        return item['id'] == file['id'];
+      });
+      bodyWidget = PreviewImage(
+        file,
+        galleryItems: imageList,
+        defaultImage: index,
+        pageChanged: _pageChanged,
+        decoration: const BoxDecoration(color: Colors.white),
+      );
+    } else if (fileType == 'file') {
+      bodyWidget = PreviewFile(file);
     } else {
-      if (fileType == 'image') {
-        int index = imageList.indexWhere((item) {
-          return item['id'] == file['id'];
-        });
-        bodyWidget = PreviewImage(
-          file,
-          galleryItems: imageList,
-          defaultImage: index,
-          pageChanged: _pageChanged,
-          decoration: const BoxDecoration(color: Colors.white),
-        );
-      } else {
-        bodyWidget = PreviewFile(file);
-      }
+      print('不支持预览 fileType: $fileType');
+      bodyWidget = Scaffold(
+        body: Container(
+          padding: const EdgeInsets.all(0),
+          child: Column(
+            children: [
+              const MyTopBar(
+                title: Text(
+                  '预览',
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '文件格式不支持预览',
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
     return bodyWidget;
   }

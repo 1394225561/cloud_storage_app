@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../apis/app.dart';
 import '/src/utils/http_request.dart';
+import 'global_constant.dart';
 import 'mime_types.dart';
 
 class Tools {
@@ -93,12 +94,6 @@ class Tools {
     return null;
   }
 
-  static Map<String, dynamic> userDetails = {};
-  static Map<String, dynamic> sysConfig = {};
-
-  static String routerSplitCharacter = '#%@';
-  static String permissionBtns = '';
-
   static Future getPermissionBtns() async {
     List getPermissionBtnResponse =
         await requestClient.get(AppApis.getPermissionBtn);
@@ -106,7 +101,8 @@ class Tools {
     getPermissionBtnResponse.toList().forEach((item) {
       array.add(item['code']);
     });
-    permissionBtns = array.join(routerSplitCharacter);
+    GlobalConstant.permissionBtns =
+        array.join(GlobalConstant.routerSplitCharacter);
     // SharedPreferences prefs = await SharedPreferences.getInstance();
     // prefs.setString('permissionBtns', array.join(routerSplitCharacter));
   }
