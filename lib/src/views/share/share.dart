@@ -1,6 +1,6 @@
 import 'dart:async';
+import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 
 import '../../apis/share_apis.dart';
 import '../../models/fileListModels/provider.dart';
+import '../../utils/event_bus.dart';
 import '../../utils/global_constant.dart';
 import '../../utils/http_request.dart';
 import '../../utils/tools.dart';
@@ -31,6 +32,7 @@ class _SharePageState extends State<SharePage> {
   bool isShowTopOptionBar = false;
   bool isShowBatchOptionBar = false;
   Map<String, dynamic> listData = {};
+  late StreamSubscription<RefreshFileList> _refreshFileListSubscription;
 
   Map<String, dynamic> tableparm = {
     'fileId': 'rootpath',
@@ -46,6 +48,18 @@ class _SharePageState extends State<SharePage> {
     Provider.of<FileListProvider>(context, listen: false)
         .assigningType(widget.bizType);
     _getPersonalFileList();
+    _refreshFileListSubscription =
+        eventBus.on<RefreshFileList>().listen((event) {
+      if (event.type == 2) {
+        _onRefresh();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshFileListSubscription.cancel();
+    super.dispose();
   }
 
   Future _getPersonalFileList() {
@@ -354,49 +368,40 @@ class _SharePageState extends State<SharePage> {
 
   void uploadTypeSelect(String type) async {
     if (type == '文件') {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        withReadStream: true,
-      );
+      FilePickerResult? result = await FilePicker.platform.pickFiles();
       if (result != null) {
         PlatformFile file = result.files.first;
-        print(type);
-        print(file);
-        print(file.readStream);
-        print(Tools.getMimeType(file.extension));
 
-        String guid = Tools.generateRandomStrings(10) +
-            DateTime.now().millisecondsSinceEpoch.toString();
+        String creationTime = DateTime.now().millisecondsSinceEpoch.toString();
+        String guid = Tools.generateRandomStrings(10) + creationTime;
         String filePath = file.path ?? '';
+        File generatorFile = File(filePath);
         String? mimeType = Tools.getMimeType(file.extension);
+
+        int size = file.size;
+        int chunkSize = GlobalConstant.chunkSize;
+        int chunks = (size / chunkSize).ceil();
+
         Map<String, dynamic> data = {
+          'file': generatorFile,
+          'pickerType': 'filePicker',
           'name': file.name,
-          'chunk': '',
-          'chunks': '',
+          'chunk': 0,
+          'chunks': chunks,
           'type': mimeType,
-          'size': file.size,
+          'size': size,
           'dirId': tableparm['fileId'],
           'guid': guid,
           'uploadType': '',
-          'chunkSize': '',
+          'chunkSize': chunkSize,
           'md5': '',
-          'fileCategory': null,
+          'fileCategory': 2,
           'filePath': filePath,
+          'creationTime': creationTime,
           'state': 'waiting',
           'stateText': '等待上传',
         };
-
-        // requestUnified(() async {
-        //   Map<String, dynamic> fileUploadResponse =
-        //       await requestClient.dioUpload(
-        //     UploadApis.fileUpload['path'],
-        //     filePath: filePath,
-        //     filename: file.name,
-        //     mimeType: mimeType,
-        //     data: data,
-        //     progressCallback: progressCallback,
-        //   );
-        //   print(fileUploadResponse);
-        // });
+        eventBus.fire(AddUploadingListData(data));
       }
     } else {
       final ImagePicker _picker = ImagePicker();
@@ -419,59 +424,39 @@ class _SharePageState extends State<SharePage> {
       if (resource != null) {
         mediaFiles?.add(resource);
       }
-      print('mediaFiles');
-      print(mediaFiles);
-      print(type);
 
       mediaFiles?.forEach((file) async {
         if (file != null) {
-          print(file.path);
-          print(file.mimeType);
-          print(file.name);
-          print(await file.length());
-          print(await file.readAsBytes());
-
-          String guid = Tools.generateRandomStrings(10) +
+          String creationTime =
               DateTime.now().millisecondsSinceEpoch.toString();
-          // DateTime lastModified = await file.lastModified();
+          String guid = Tools.generateRandomStrings(10) + creationTime;
+
+          int size = await file.length();
+          int chunkSize = GlobalConstant.chunkSize;
+          int chunks = (size / chunkSize).ceil();
+
           Map<String, dynamic> data = {
+            'file': file,
+            'pickerType': 'imagePicker',
             'name': file.name,
-            'chunk': '',
-            'chunks': '',
+            'chunk': 0,
+            'chunks': chunks,
             'type': file.mimeType,
-            'size': await file.length(),
+            'size': size,
             'dirId': tableparm['fileId'],
             'guid': guid,
             'uploadType': '',
-            'chunkSize': '',
+            'chunkSize': chunkSize,
             'md5': '',
-            'fileCategory': null,
+            'fileCategory': 2,
             'filePath': file.path,
+            'creationTime': creationTime,
             'state': 'waiting',
             'stateText': '等待上传',
           };
-          // requestUnified(() async {
-          //   Map<String, dynamic> fileUploadResponse =
-          //       await requestClient.dioUpload(
-          //     UploadApis.fileUpload['path'],
-          //     filePath: file.path,
-          //     filename: file.name,
-          //     mimeType: file.mimeType,
-          //     data: data,
-          //     progressCallback: progressCallback,
-          //   );
-          //   print(fileUploadResponse);
-          // });
+          eventBus.fire(AddUploadingListData(data));
         }
       });
     }
-  }
-
-  void progressCallback(int count, int total, CancelToken cancelToken) {
-    print('progressCallback');
-    print(count);
-    print(total);
-    double percentage = count * 100 / total;
-    print(percentage);
   }
 }
