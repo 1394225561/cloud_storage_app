@@ -1,7 +1,13 @@
+import 'dart:io';
 import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../apis/app.dart';
 import '/src/utils/http_request.dart';
+import 'check_version.dart';
 import 'global_constant.dart';
 import 'mime_types.dart';
 
@@ -105,5 +111,49 @@ class Tools {
         array.join(GlobalConstant.routerSplitCharacter);
     // SharedPreferences prefs = await SharedPreferences.getInstance();
     // prefs.setString('permissionBtns', array.join(routerSplitCharacter));
+  }
+
+  ///PermissionGroup.storage 对应的是
+  ///android 的外部存储 （External Storage）
+  ///ios 的Documents` or `Downloads`
+  static Future checkPermissFunction() async {
+    if (GlobalConstant.platform == TargetPlatform.android) {
+      ///安卓平台中 checkPermissionStatus方法校验是否有储存卡的读写权限
+      Permission permission = Permission.storage;
+      PermissionStatus status = await permission.status;
+      if (status != PermissionStatus.granted) {
+        // 无权限那么 调用方法 requestPermissions 申请权限
+        // 发起权限申请
+        // 返回权限申请的状态 status
+        PermissionStatus status = await permission.request();
+        if (status.isPermanentlyDenied) {
+          openAppSettings();
+        } else {
+          return true;
+        }
+      } else {
+        return true;
+      }
+    } else {
+      return true;
+    }
+    return false;
+  }
+
+  /// 获取apk存储位置
+  static Future<String> apkLocalPath() async {
+    final directory = await getExternalStorageDirectory();
+    String path = directory!.path + Platform.pathSeparator + 'Download';
+    final savedDir = Directory(path);
+    bool hasExisted = await savedDir.exists();
+    if (!hasExisted) {
+      await savedDir.create();
+    }
+    return path;
+  }
+
+  static void checkAppVersion(BuildContext context) {
+    CheckVersion checkVersion = CheckVersion(Platform.isAndroid, context);
+    checkVersion.checkVersionCode();
   }
 }

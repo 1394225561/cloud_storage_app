@@ -16,3 +16,8 @@ class RefreshFileList {
   RefreshFileList(this.type);
   int type;
 }
+
+class ApkDownload {
+  ApkDownload(this.data);
+  Map<String, dynamic> data;
+}

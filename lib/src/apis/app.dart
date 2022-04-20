@@ -9,4 +9,10 @@ class AppApis {
     'path': '/api/menu/pagePermissions',
     'method': 'get'
   };
+  static final Map<String, dynamic> getAppVersion = {
+    'path': '/api/clientVersion/get',
+    'app': 'cloudStorage',
+    'method': 'get',
+    'dataType': 'json',
+  };
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/fileListModels/provider.dart';
-
 import '../../models/transferListModels/provider.dart';
 import '../../utils/global_constant.dart';
 import '../../utils/tools.dart';
@@ -10,7 +9,6 @@ import '/src/views/personal/personal.dart';
 import '/src/views/share/share.dart';
 import '/src/views/transfer/transfer.dart';
 import '/src/views/info/info.dart';
-
 import '/src/utils/http_request.dart';
 import '/src/apis/user_apis.dart';
 import '/src/apis/app.dart';
@@ -66,6 +64,7 @@ class _MainPartState extends State<MainPart> {
   @override
   void initState() {
     super.initState();
+    Tools.checkAppVersion(context);
     print('首页发起请求');
     requestUnified(() async {
       Map<String, dynamic> userDetailsResponse =

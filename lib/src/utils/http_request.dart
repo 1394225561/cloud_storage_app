@@ -39,6 +39,8 @@ Future requestUnified(
       loadingText: loadingText,
     );
   } catch (e) {
+    print('requestUnified error');
+    print(e);
     handleException(ApiException.from(e), onError: onError);
   }
   return;

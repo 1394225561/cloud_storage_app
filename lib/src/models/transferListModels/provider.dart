@@ -6,12 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../apis/upload_apis.dart';
 import '../../utils/event_bus.dart';
 import '../../utils/global_constant.dart';
 import '../../utils/http_request.dart';
+import '../../utils/tools.dart';
 import 'state.dart';
 
 class TransferListProvider extends ChangeNotifier {
@@ -136,7 +136,7 @@ class TransferListProvider extends ChangeNotifier {
     notifyListeners();
 
     /// 申请写文件权限
-    bool isPermiss = await checkPermissFunction();
+    bool isPermiss = await Tools.checkPermissFunction();
     if (isPermiss) {
       ///手机储存目录
       String savePath = await getPhoneLocalPath();
@@ -193,33 +193,6 @@ class TransferListProvider extends ChangeNotifier {
       state.downloadCompletedListData.add(currentFile);
       state.downloadingListData.removeAt(currentFileIndex);
     }
-  }
-
-  ///PermissionGroup.storage 对应的是
-  ///android 的外部存储 （External Storage）
-  ///ios 的Documents` or `Downloads`
-  checkPermissFunction() async {
-    if (GlobalConstant.platform == TargetPlatform.android) {
-      ///安卓平台中 checkPermissionStatus方法校验是否有储存卡的读写权限
-      Permission permission = Permission.storage;
-      PermissionStatus status = await permission.status;
-      if (status != PermissionStatus.granted) {
-        // 无权限那么 调用方法 requestPermissions 申请权限
-        // 发起权限申请
-        // 返回权限申请的状态 status
-        PermissionStatus status = await permission.request();
-        if (status.isPermanentlyDenied) {
-          openAppSettings();
-        } else {
-          return true;
-        }
-      } else {
-        return true;
-      }
-    } else {
-      return true;
-    }
-    return false;
   }
 
   ///获取手机的存储目录路径

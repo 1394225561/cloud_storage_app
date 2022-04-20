@@ -101,7 +101,7 @@ class _PreviewImageState extends State<PreviewImage> {
 
   void _routerBack() {
     // TODO: 直接pop 会报错 Looking up a deactivated widget's ancestor is unsafe.
-    pageOptionsScaleController.scaleState = PhotoViewScaleState.originalSize;
+    pageOptionsScaleController.scaleState = PhotoViewScaleState.covering;
     RouterManager.router?.pop(context);
   }
 }
