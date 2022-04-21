@@ -23,18 +23,18 @@ class CheckVersion {
     int serviceVersionCode;
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     String appName = packageInfo.appName;
-    String packageName = packageInfo.packageName;
     String version = packageInfo.version;
     String buildNumber = packageInfo.buildNumber;
     // String buildSignature = packageInfo.buildSignature;
     print(appName);
-    print(packageName);
     print(version);
     print(buildNumber);
     // print(buildSignature);
+
     // Future.delayed(const Duration(seconds: 3), () {
-    //   EasyLoading.showToast(appName + '、' + packageName + '、' + version);
+    //   EasyLoading.showToast(appName + ':' + version);
     // });
+
     requestUnified(() async {
       Map<String, dynamic> getAppVersionResponse = await requestClient.get(
         AppApis.getAppVersion,
@@ -44,18 +44,17 @@ class CheckVersion {
       );
       print('getAppVersionResponse');
       print(getAppVersionResponse);
-      updateUrl =
-          '/api/file/download/single?fileId=E98FF2952F0A4076801B63F070061D18';
+      // updateUrl =
+      //     '/api/file/download/single?fileId=4AD6D3756EE94949A69436A6F6ECDDB7';
       updateUrl = getAppVersionResponse['updateUrl'];
       serviceVersion = getAppVersionResponse['versionName'];
-      serviceVersionCode = getAppVersionResponse['versionCode'];
+      serviceVersionCode = getAppVersionResponse['versionCode'] == ''
+          ? 0
+          : getAppVersionResponse['versionCode'];
       String fileName = '${appName}v$serviceVersion.apk';
 
-      // showNewVersionAppDialog(updateUrl, fileName);
-
-      if (double.parse(serviceVersion.substring(0, 3)) >
-              double.parse(version.substring(0, 3)) ||
-          serviceVersionCode > double.parse(buildNumber)) {
+      if (serviceVersionCode > double.parse(buildNumber) ||
+          version != serviceVersion) {
         // 有新版本
         if (isAndroid) {
           showNewVersionAppDialog(updateUrl, fileName);
@@ -105,10 +104,10 @@ class CheckVersion {
   }
 
   /// 执行更新操作
-  doUpdate(
+  void doUpdate(
     String url,
     String fileName,
-  ) async {
+  ) {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -128,7 +127,7 @@ class CheckVersion {
     getApk(url, fileName);
   }
 
-  void getApk(
+  Future<void> getApk(
     String url,
     String fileName,
   ) async {
