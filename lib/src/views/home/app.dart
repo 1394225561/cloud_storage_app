@@ -64,7 +64,6 @@ class _MainPartState extends State<MainPart> {
   @override
   void initState() {
     super.initState();
-    Tools.checkAppVersion(context);
     print('首页发起请求');
     requestUnified(() async {
       Map<String, dynamic> userDetailsResponse =
@@ -74,6 +73,7 @@ class _MainPartState extends State<MainPart> {
           await requestClient.get(AppApis.sysConfig);
       GlobalConstant.sysConfig = sysConfigResponse;
       await Tools.getPermissionBtns();
+      Tools.checkAppVersion(context);
     });
   }
 

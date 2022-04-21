@@ -21,6 +21,7 @@ class CheckVersion {
     String updateUrl;
     String serviceVersion;
     int serviceVersionCode;
+
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     String appName = packageInfo.appName;
     String version = packageInfo.version;
@@ -31,9 +32,9 @@ class CheckVersion {
     print(buildNumber);
     // print(buildSignature);
 
-    // Future.delayed(const Duration(seconds: 3), () {
-    //   EasyLoading.showToast(appName + ':' + version);
-    // });
+    Future.delayed(const Duration(seconds: 3), () {
+      EasyLoading.showToast('当前app版本: $appName => v$version');
+    });
 
     requestUnified(() async {
       Map<String, dynamic> getAppVersionResponse = await requestClient.get(
@@ -44,9 +45,9 @@ class CheckVersion {
       );
       print('getAppVersionResponse');
       print(getAppVersionResponse);
-      // updateUrl =
-      //     '/api/file/download/single?fileId=4AD6D3756EE94949A69436A6F6ECDDB7';
-      updateUrl = getAppVersionResponse['updateUrl'];
+      updateUrl = getAppVersionResponse['updateUrl'] == ''
+          ? '/api/file/download/single?fileId=4AD6D3756EE94949A69436A6F6ECDDB7'
+          : getAppVersionResponse['updateUrl'];
       serviceVersion = getAppVersionResponse['versionName'];
       serviceVersionCode = getAppVersionResponse['versionCode'] == ''
           ? 0
