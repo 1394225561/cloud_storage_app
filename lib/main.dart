@@ -14,8 +14,12 @@ void main() async {
 
   RequestConfig.baseUrl = envConfiguration['baseUrl'];
 
-  requestClient = RequestClient();
-  await requestClient.initCookieManager();
+  if (envConfiguration['platform'] == 'web') {
+    requestClient = RequestClient(false);
+  } else {
+    requestClient = RequestClient(true);
+    await requestClient.initCookieManager();
+  }
 
   runApp(const MyApp());
   // CookieManager.instance.initCookie();

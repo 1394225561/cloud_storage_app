@@ -15,11 +15,14 @@ void main() async {
 
   RequestConfig.baseUrl = envConfiguration['baseUrl'];
 
-  requestClient = RequestClient();
-
   // 原生事件
-  // TODO: web端开发调试时 需要注释下行 否则会报错。模拟器调试 放开注释。
-  await requestClient.initCookieManager();
+  // web端开发调试时 不能加载cookie manager拦截器 否则会报错。
+  if (envConfiguration['platform'] == 'web') {
+    requestClient = RequestClient(false);
+  } else {
+    requestClient = RequestClient(true);
+    await requestClient.initCookieManager();
+  }
 
   runApp(const MyApp());
   // CookieManager.instance.initCookie();

@@ -10,6 +10,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../apis/app.dart';
 import 'event_bus.dart';
 import 'http_request.dart';
+import 'mime_types.dart';
 import 'tools.dart';
 
 class CheckVersion {
@@ -172,7 +173,7 @@ class CheckVersion {
   /// 安装apk
   Future<void> installApk(path) async {
     print('安装:$path');
-    await OpenFile.open(path, type: 'application/vnd.android.package-archive');
+    await OpenFile.open(path, type: StaticMimeTypes.extension2mimeTypes['apk']);
   }
 }
 
@@ -214,7 +215,7 @@ class _ApkDownloadProgressState extends State<ApkDownloadProgress> {
         children: [
           apkFile['count'] == null
               ? const SizedBox()
-              : Text('${apkFile['count']}/${apkFile['total']}'),
+              : Text('${apkFile['count']} / ${apkFile['total']}'),
           const SizedBox(height: 7),
           Text('${apkFile['stateText']}')
         ],

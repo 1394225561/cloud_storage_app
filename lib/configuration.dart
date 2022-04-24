@@ -10,6 +10,8 @@ class EnvConfig {
     'baseUrl': '',
     'headerTitle': '法务云盘',
     'region': 'JIANGSU',
+    'platform': 'web',
+    // 'platform': 'android',
   };
 
   static Map<String, dynamic> getEnvConfig(Env env) {
@@ -22,9 +24,12 @@ class EnvConfig {
         return envConfiguration;
       // 开发配置
       case Env.development:
-        // envConfiguration['baseUrl'] = "http://localhost:4500"; // 浏览器调试需要走本地代理
-        // envConfiguration['baseUrl'] = "http://172.16.5.137:8080"; // 模拟器调试
-        envConfiguration['baseUrl'] = "http://172.16.6.139:50375"; // 模拟器调试
+        if (envConfiguration['platform'] == 'web') {
+          envConfiguration['baseUrl'] = "http://localhost:4500"; // 浏览器调试需要走本地代理
+        } else {
+          // envConfiguration['baseUrl'] = "http://172.16.5.137:8080"; // 模拟器调试
+          envConfiguration['baseUrl'] = "http://172.16.6.139:50375"; // 模拟器调试
+        }
         envConfiguration['headerTitle'] = "云盘开发环境";
         return envConfiguration;
       case Env.local:

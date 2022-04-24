@@ -100,8 +100,9 @@ bool handleException(
 // 单个DIO请求封装类
 class RequestClient {
   late Dio _dio;
+  late bool isAndroid;
 
-  RequestClient() {
+  RequestClient(this.isAndroid) {
     BaseOptions options = BaseOptions(
       baseUrl: RequestConfig.baseUrl,
       connectTimeout: RequestConfig.connectTimeout,
@@ -119,8 +120,10 @@ class RequestClient {
     // adapter.withCredentials = true;
     // _dio.httpClientAdapter = adapter;
 
-    // TODO: 自定义拦截器 web端调试时 需要注释掉
-    _dio.interceptors.add(myInterceptor(_dio));
+    // 自定义拦截器 web端调试时 不添加
+    if (isAndroid) {
+      _dio.interceptors.add(myInterceptor(_dio));
+    }
     // 自定义cookie管理
     // _dio.interceptors.add(CookieManager.instance);
   }
