@@ -6,6 +6,7 @@ import 'src/routers/router_table.dart';
 import 'configuration.dart';
 import 'src/utils/http_request.dart';
 
+// 测试GitHub ssh
 // 开发环境
 Map<String, dynamic> envConfiguration = EnvConfig.getEnvConfig(Env.development);
 
